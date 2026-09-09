@@ -1,27 +1,16 @@
 import "dotenv/config";
-import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import { REST, Routes } from "discord.js";
+import * as setupCommand from "./commands/setup.js";
+import * as wargameCommand from "./commands/wargame.js";
 
-const commands = [
-	new SlashCommandBuilder()
-		.setName("setup")
-		.setDescription("Set up the WSG signup server"),
-
-	new SlashCommandBuilder()
-		.setName("wargame")
-		.setDescription("Create a WSG wargame signup")
-		.addStringOption((option) =>
-			option
-				.setName("date")
-				.setDescription("Event date and time, e.g. 2026-09-11 20:00")
-				.setRequired(true),
-		),
-].map((command) => command.toJSON());
+const commands = [setupCommand, wargameCommand].map((command) =>
+	command.data.toJSON(),
+);
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 try {
 	console.log("Registering commands...");
-
 	await rest.put(
 		Routes.applicationGuildCommands(
 			"1547077841001123841",
