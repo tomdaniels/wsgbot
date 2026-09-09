@@ -1,14 +1,19 @@
 import "dotenv/config";
 import { client } from "./client.js";
+import * as rosterCommand from "./commands/roster.js";
 import * as setupCommand from "./commands/setup.js";
 import * as wargameCommand from "./commands/wargame.js";
+import * as rosterDraft from "./interactions/rosterDraft.js";
 import * as wargameSignup from "./interactions/wargameSignup.js";
 
 const commands = new Map(
-	[setupCommand, wargameCommand].map((command) => [command.data.name, command]),
+	[setupCommand, wargameCommand, rosterCommand].map((command) => [
+		command.data.name,
+		command,
+	]),
 );
 
-const componentHandlers = [wargameSignup];
+const componentHandlers = [wargameSignup, rosterDraft];
 
 const findComponentHandler = (customId) => {
 	const prefix = customId.split(":")[0];
@@ -27,6 +32,11 @@ client.on("interactionCreate", async (interaction) => {
 
 	if (interaction.isChatInputCommand()) {
 		await commands.get(interaction.commandName)?.execute(interaction);
+		return;
+	}
+
+	if (interaction.isAutocomplete()) {
+		await commands.get(interaction.commandName)?.autocomplete?.(interaction);
 		return;
 	}
 

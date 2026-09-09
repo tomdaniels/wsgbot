@@ -2,8 +2,9 @@ import "dotenv/config";
 import { REST, Routes } from "discord.js";
 import * as setupCommand from "./commands/setup.js";
 import * as wargameCommand from "./commands/wargame.js";
+import * as rosterCommand from "./commands/roster.js";
 
-const commands = [setupCommand, wargameCommand].map((command) =>
+const commands = [setupCommand, wargameCommand, rosterCommand].map((command) =>
 	command.data.toJSON(),
 );
 

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { client } from "../client.js";
 import { getClassIndicator } from "../domain/classes.js";
-import { PLAYER_STATUS } from "../domain/wargame.js";
+import { MAX_SIGNUPS, PLAYER_STATUS } from "../domain/wargame.js";
 import { getMemberName } from "../discord/memberNames.js";
 import { formatEventTime } from "../format.js";
 
@@ -39,10 +39,6 @@ export const createSignupPanel = async (event, guild) => {
 		return names.join(", ");
 	};
 
-	const roster = players.filter(
-		(player) => player.rosterStatus === "selected",
-	).length;
-
 	const signedUpPlayers = await Promise.all(signedUp.map(formatSignedUpPlayer));
 
 	const tentativeNames = await formatNames(tentative);
@@ -54,14 +50,12 @@ export const createSignupPanel = async (event, guild) => {
 			"",
 			formatEventTime(event.date),
 			"",
-			`**SIGNED UP ${signedUp.length}**`,
+			`**SIGNED UP ${signedUp.length}/${MAX_SIGNUPS}**`,
 			"",
 			signedUpPlayers.length > 0 ? signedUpPlayers.join("\n") : "—",
 			"",
 			`**TENTATIVE:** ${tentativeNames}`,
 			`**ABSENT:** ${absentNames}`,
-			"",
-			`**ROSTER ${roster}/10**`,
 		].join("\n"),
 		components: [
 			new ActionRowBuilder().addComponents(

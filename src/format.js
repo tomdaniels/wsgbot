@@ -3,3 +3,6 @@ export const formatEventTime = (timestamp) => {
 
 	return `<t:${unix}:F>\n<t:${unix}:R>`;
 };
+
+export const formatEventDateShort = (timestamp) =>
+	new Date(timestamp).toISOString().slice(0, 16).replace("T", " ");

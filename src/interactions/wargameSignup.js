@@ -1,6 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { getMemberClasses } from "../domain/classes.js";
-import { PLAYER_STATUS, getPlayer, setPlayerSignup } from "../domain/wargame.js";
+import {
+	MAX_SIGNUPS,
+	PLAYER_STATUS,
+	getPlayer,
+	isSignupFull,
+	setPlayerSignup,
+} from "../domain/wargame.js";
 import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
 import { updateSignupPanel } from "../ui/signupPanel.js";
 
@@ -65,6 +71,15 @@ const setStatus = async (interaction, status) => {
 		return;
 	}
 
+	if (status === PLAYER_STATUS.SIGNED_UP && isSignupFull(event, interaction.user.id)) {
+		await interaction.reply({
+			content: `Signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
+			flags: 64,
+		});
+
+		return;
+	}
+
 	const reply = async (className) => {
 		setPlayerSignup(event, interaction.user.id, status, className);
 
@@ -110,6 +125,15 @@ const setClass = async (interaction, status, className) => {
 		await interaction.reply({
 			content: "You don't have that class role.",
 			flags: 64,
+		});
+
+		return;
+	}
+
+	if (status === PLAYER_STATUS.SIGNED_UP && isSignupFull(event, interaction.user.id)) {
+		await interaction.update({
+			content: `Signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
+			components: [],
 		});
 
 		return;
