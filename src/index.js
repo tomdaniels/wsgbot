@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { ChannelType, Client, GatewayIntentBits } from "discord.js";
 import { findOrCreateChannel } from "./utils/findOrCreateChannel.js";
+import { findOrCreateRole } from "./utils/findOrCreateRole.js";
 
 const client = new Client({
 	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
@@ -38,8 +39,19 @@ client.on("interactionCreate", async (interaction) => {
 			channel.name.toLowerCase() === "text channels",
 	);
 
+	const voiceCategory = guild.channels.cache.find(
+		(channel) =>
+			channel.type === ChannelType.GuildCategory &&
+			channel.name.toLowerCase() === "voice channels",
+	);
+
 	if (!textCategory) {
 		await interaction.editReply("Couldn't find the Text channels category.");
+		return;
+	}
+
+	if (!voiceCategory) {
+		await interaction.editReply("Couldn't find the Voice Channels category.");
 		return;
 	}
 
@@ -56,24 +68,29 @@ client.on("interactionCreate", async (interaction) => {
 	});
 
 	for (const role of roles) {
-		const existingRole = guild.roles.cache.find(
-			(existing) => existing.name === role.name,
-		);
-
-		if (existingRole) {
-			await existingRole.edit({
-				color: role.color,
-			});
-		} else {
-			await guild.roles.create({
-				name: role.name,
-				color: role.color,
-			});
-		}
+		await findOrCreateRole(guild, role);
 	}
 
+	await findOrCreateChannel(guild, {
+		name: "Wargame",
+		type: ChannelType.GuildVoice,
+		parentId: voiceCategory.id,
+	});
+
+	await findOrCreateChannel(guild, {
+		name: "Pug",
+		type: ChannelType.GuildVoice,
+		parentId: voiceCategory.id,
+	});
+
+	await findOrCreateChannel(guild, {
+		name: "Organizer",
+		type: ChannelType.GuildVoice,
+		parentId: voiceCategory.id,
+	});
+
 	await interaction.editReply(
-		`Setup complete: ${welcome} and ${wargame}. Roles are ready.`,
+		`Setup complete: ${welcome} and ${wargame}. Roles and voice channels are ready.`,
 	);
 });
 
