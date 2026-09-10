@@ -27,6 +27,9 @@ const CLASS_INDICATORS = {
 export const getClassIndicator = (className) =>
 	CLASS_INDICATORS[className] ?? "⚪";
 
+export const getClassByIndicator = (indicator) =>
+	CLASS_ROLES.find((role) => CLASS_INDICATORS[role.name] === indicator)?.name;
+
 export const getMemberClasses = (member) =>
 	CLASS_ROLES.filter((role) =>
 		member.roles.cache.some((memberRole) => memberRole.name === role.name),

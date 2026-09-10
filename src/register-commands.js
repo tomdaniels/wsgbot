@@ -1,12 +1,16 @@
 import "dotenv/config";
 import { REST, Routes } from "discord.js";
+import * as classRolesCommand from "./commands/classRoles.js";
 import * as setupCommand from "./commands/setup.js";
 import * as wargameCommand from "./commands/wargame.js";
 import * as rosterCommand from "./commands/roster.js";
 
-const commands = [setupCommand, wargameCommand, rosterCommand].map((command) =>
-	command.data.toJSON(),
-);
+const commands = [
+	setupCommand,
+	wargameCommand,
+	rosterCommand,
+	classRolesCommand,
+].map((command) => command.data.toJSON());
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
