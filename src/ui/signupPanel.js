@@ -35,6 +35,12 @@ const buildFactionEmbed = async (guild, faction, players) => {
 		.setDescription(lines.length > 0 ? lines.join("\n") : "—");
 };
 
+const buildTentativeAbsentEmbed = (tentativeNames, absentNames) =>
+	new EmbedBuilder().addFields(
+		{ name: "Tentative", value: tentativeNames, inline: true },
+		{ name: "Absent", value: absentNames, inline: true },
+	);
+
 export const createSignupPanel = async (event, guild) => {
 	const players = Object.values(event.players);
 
@@ -69,7 +75,7 @@ export const createSignupPanel = async (event, guild) => {
 		? [event.faction]
 		: [FACTIONS.ALLIANCE, FACTIONS.HORDE];
 
-	const embeds = await Promise.all(
+	const factionEmbeds = await Promise.all(
 		factions.map((faction) =>
 			buildFactionEmbed(
 				guild,
@@ -78,6 +84,8 @@ export const createSignupPanel = async (event, guild) => {
 			),
 		),
 	);
+
+	const embeds = [...factionEmbeds, buildTentativeAbsentEmbed(tentativeNames, absentNames)];
 
 	const factionHeader = event.faction
 		? ` — ${FACTION_LABELS[event.faction].toUpperCase()} SIGN UPS`
@@ -92,9 +100,6 @@ export const createSignupPanel = async (event, guild) => {
 			`## WARGAME${factionHeader}`,
 			"",
 			formatEventTime(event.date),
-			"",
-			`**TENTATIVE:** ${tentativeNames}`,
-			`**ABSENT:** ${absentNames}`,
 		].join("\n"),
 		embeds,
 		components: [
