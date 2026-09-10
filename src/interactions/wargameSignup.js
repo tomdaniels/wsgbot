@@ -1,14 +1,14 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { getMemberClasses } from "../domain/classes.js";
 import {
-	MAX_SIGNUPS,
-	PLAYER_STATUS,
 	getPlayer,
 	isSignupFull,
+	MAX_SIGNUPS,
+	PLAYER_STATUS,
 	setPlayerSignup,
 } from "../domain/wargame.js";
-import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
 import { updateSignupPanel } from "../ui/signupPanel.js";
+import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
 
 export const prefix = "wargame";
 
@@ -48,7 +48,7 @@ const setStatus = async (interaction, status) => {
 	if (playerClasses.length === 0) {
 		await interaction.reply({
 			content:
-				"You don't have a class role yet. Ask an organizer to assign you one.",
+				"You don't have a class role yet. Nominate your classes in #whalecum.",
 			flags: 64,
 		});
 
@@ -57,7 +57,10 @@ const setStatus = async (interaction, status) => {
 
 	const existingPlayer = getPlayer(event, interaction.user.id);
 
-	if (status === PLAYER_STATUS.SIGNED_UP && existingPlayer?.status === PLAYER_STATUS.SIGNED_UP) {
+	if (
+		status === PLAYER_STATUS.SIGNED_UP &&
+		existingPlayer?.status === PLAYER_STATUS.SIGNED_UP
+	) {
 		if (playerClasses.length === 1) {
 			await interaction.reply({
 				content: `You're already signed up as **${existingPlayer.class}**.`,
@@ -71,7 +74,10 @@ const setStatus = async (interaction, status) => {
 		return;
 	}
 
-	if (status === PLAYER_STATUS.SIGNED_UP && isSignupFull(event, interaction.user.id)) {
+	if (
+		status === PLAYER_STATUS.SIGNED_UP &&
+		isSignupFull(event, interaction.user.id)
+	) {
 		await interaction.reply({
 			content: `Signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
 			flags: 64,
@@ -130,7 +136,10 @@ const setClass = async (interaction, status, className) => {
 		return;
 	}
 
-	if (status === PLAYER_STATUS.SIGNED_UP && isSignupFull(event, interaction.user.id)) {
+	if (
+		status === PLAYER_STATUS.SIGNED_UP &&
+		isSignupFull(event, interaction.user.id)
+	) {
 		await interaction.update({
 			content: `Signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
 			components: [],
