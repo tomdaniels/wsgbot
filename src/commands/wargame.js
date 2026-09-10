@@ -1,5 +1,6 @@
 import { ChannelType, SlashCommandBuilder } from "discord.js";
 import { createEvent } from "../domain/wargame.js";
+import { FACTION_LABELS, FACTIONS } from "../domain/factions.js";
 import { readOnlyChannelOverwrites } from "../utils/channelPermissions.js";
 import { findOrCreateChannel } from "../utils/findOrCreateChannel.js";
 import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
@@ -13,6 +14,16 @@ export const data = new SlashCommandBuilder()
 			.setName("date")
 			.setDescription("Event date and time, e.g. 2026-09-11 20:00")
 			.setRequired(true),
+	)
+	.addStringOption((option) =>
+		option
+			.setName("faction")
+			.setDescription("Restrict signups to one faction (omit for both Horde and Alliance)")
+			.setRequired(false)
+			.addChoices(
+				{ name: FACTION_LABELS[FACTIONS.HORDE], value: FACTIONS.HORDE },
+				{ name: FACTION_LABELS[FACTIONS.ALLIANCE], value: FACTIONS.ALLIANCE },
+			),
 	);
 
 export const execute = async (interaction) => {
@@ -45,10 +56,25 @@ export const execute = async (interaction) => {
 		permissionOverwrites: readOnlyChannelOverwrites(guild),
 	});
 
+	const previousEvent = data.events[guild.id];
+
+	if (previousEvent) {
+		const previousChannel = await guild.channels.fetch(previousEvent.channelId).catch(() => null);
+
+		const previousMessage = previousChannel?.isTextBased()
+			? await previousChannel.messages.fetch(previousEvent.messageId).catch(() => null)
+			: null;
+
+		await previousMessage?.edit({ components: [] }).catch(() => null);
+	}
+
+	const faction = interaction.options.getString("faction");
+
 	const event = createEvent({
 		guildId: guild.id,
 		channelId: channel.id,
 		date: date.getTime(),
+		faction,
 	});
 
 	const message = await channel.send(await createSignupPanel(event, guild));
@@ -59,7 +85,7 @@ export const execute = async (interaction) => {
 	await saveWargameData(data);
 
 	await interaction.reply({
-		content: `Wargame created in ${channel}.`,
+		content: `Wargame created in ${channel}${faction ? ` (${FACTION_LABELS[faction]} only)` : ""}.`,
 		flags: 64,
 	});
 };

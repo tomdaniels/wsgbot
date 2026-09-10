@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { getMemberClasses } from "../domain/classes.js";
+import { FACTION_INDICATORS, FACTION_LABELS, FACTIONS } from "../domain/factions.js";
 import {
 	getPlayer,
 	isSignupFull,
@@ -29,6 +30,49 @@ const promptClassChoice = async (interaction, status, playerClasses) => {
 	});
 };
 
+const buildFactionPrompt = (status, className) => ({
+	content: `Choose your faction for **${className}**.`,
+	components: [
+		new ActionRowBuilder().addComponents(
+			new ButtonBuilder()
+				.setCustomId(`wargame:faction:${status}:${className}:${FACTIONS.ALLIANCE}`)
+				.setLabel(FACTION_LABELS[FACTIONS.ALLIANCE])
+				.setEmoji(FACTION_INDICATORS[FACTIONS.ALLIANCE])
+				.setStyle(ButtonStyle.Primary),
+
+			new ButtonBuilder()
+				.setCustomId(`wargame:faction:${status}:${className}:${FACTIONS.HORDE}`)
+				.setLabel(FACTION_LABELS[FACTIONS.HORDE])
+				.setEmoji(FACTION_INDICATORS[FACTIONS.HORDE])
+				.setStyle(ButtonStyle.Primary),
+		),
+	],
+});
+
+const finalizeSignUp = async ({ interaction, event, data, className, faction, mode }) => {
+	const respond = (payload) =>
+		mode === "update" ? interaction.update(payload) : interaction.reply({ ...payload, flags: 64 });
+
+	if (isSignupFull(event, interaction.user.id, faction)) {
+		await respond({
+			content: `${FACTION_LABELS[faction]} signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
+			components: [],
+		});
+
+		return;
+	}
+
+	setPlayerSignup(event, interaction.user.id, PLAYER_STATUS.SIGNED_UP, className, faction);
+
+	await saveWargameData(data);
+	await updateSignupPanel(event, interaction.guild);
+
+	await respond({
+		content: `You're **signed up** as **${className}** (${FACTION_LABELS[faction]}).`,
+		components: [],
+	});
+};
+
 const setStatus = async (interaction, status) => {
 	const data = await loadWargameData();
 	const event = data.events[interaction.guildId];
@@ -55,36 +99,24 @@ const setStatus = async (interaction, status) => {
 		return;
 	}
 
-	const existingPlayer = getPlayer(event, interaction.user.id);
-
-	if (
-		status === PLAYER_STATUS.SIGNED_UP &&
-		existingPlayer?.status === PLAYER_STATUS.SIGNED_UP
-	) {
-		if (playerClasses.length === 1) {
-			await interaction.reply({
-				content: `You're already signed up as **${existingPlayer.class}**.`,
-				flags: 64,
-			});
-
+	if (status === PLAYER_STATUS.SIGNED_UP) {
+		if (playerClasses.length > 1) {
+			await promptClassChoice(interaction, status, playerClasses);
 			return;
 		}
 
-		await promptClassChoice(interaction, status, playerClasses);
+		const className = playerClasses[0];
+
+		if (event.faction) {
+			await finalizeSignUp({ interaction, event, data, className, faction: event.faction, mode: "reply" });
+			return;
+		}
+
+		await interaction.reply({ ...buildFactionPrompt(status, className), flags: 64 });
 		return;
 	}
 
-	if (
-		status === PLAYER_STATUS.SIGNED_UP &&
-		isSignupFull(event, interaction.user.id)
-	) {
-		await interaction.reply({
-			content: `Signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
-			flags: 64,
-		});
-
-		return;
-	}
+	const existingPlayer = getPlayer(event, interaction.user.id);
 
 	const reply = async (className) => {
 		setPlayerSignup(event, interaction.user.id, status, className);
@@ -99,11 +131,11 @@ const setStatus = async (interaction, status) => {
 	};
 
 	if (playerClasses.length === 1) {
-		await reply(existingPlayer?.class ?? playerClasses[0]);
+		await reply(playerClasses[0]);
 		return;
 	}
 
-	if (status !== PLAYER_STATUS.SIGNED_UP && existingPlayer?.class) {
+	if (existingPlayer?.class) {
 		await reply(existingPlayer.class);
 		return;
 	}
@@ -116,9 +148,9 @@ const setClass = async (interaction, status, className) => {
 	const event = data.events[interaction.guildId];
 
 	if (!event) {
-		await interaction.reply({
+		await interaction.update({
 			content: "There isn't an active wargame.",
-			flags: 64,
+			components: [],
 		});
 
 		return;
@@ -128,23 +160,21 @@ const setClass = async (interaction, status, className) => {
 	const playerClasses = getMemberClasses(member);
 
 	if (!playerClasses.includes(className)) {
-		await interaction.reply({
+		await interaction.update({
 			content: "You don't have that class role.",
-			flags: 64,
+			components: [],
 		});
 
 		return;
 	}
 
-	if (
-		status === PLAYER_STATUS.SIGNED_UP &&
-		isSignupFull(event, interaction.user.id)
-	) {
-		await interaction.update({
-			content: `Signups are full (${MAX_SIGNUPS}/${MAX_SIGNUPS}). Try TENTATIVE in case a spot opens up.`,
-			components: [],
-		});
+	if (status === PLAYER_STATUS.SIGNED_UP) {
+		if (event.faction) {
+			await finalizeSignUp({ interaction, event, data, className, faction: event.faction, mode: "update" });
+			return;
+		}
 
+		await interaction.update(buildFactionPrompt(status, className));
 		return;
 	}
 
@@ -157,6 +187,43 @@ const setClass = async (interaction, status, className) => {
 		content: `You're **${status.replace("_", " ")}** as **${className}**.`,
 		components: [],
 	});
+};
+
+const setFaction = async (interaction, status, className, faction) => {
+	const data = await loadWargameData();
+	const event = data.events[interaction.guildId];
+
+	if (!event) {
+		await interaction.update({
+			content: "There isn't an active wargame.",
+			components: [],
+		});
+
+		return;
+	}
+
+	if (event.faction && event.faction !== faction) {
+		await interaction.update({
+			content: `This wargame is restricted to ${FACTION_LABELS[event.faction]}.`,
+			components: [],
+		});
+
+		return;
+	}
+
+	const member = await interaction.guild.members.fetch(interaction.user.id);
+	const playerClasses = getMemberClasses(member);
+
+	if (!playerClasses.includes(className)) {
+		await interaction.update({
+			content: "You don't have that class role.",
+			components: [],
+		});
+
+		return;
+	}
+
+	await finalizeSignUp({ interaction, event, data, className, faction, mode: "update" });
 };
 
 export const handle = async (interaction) => {
@@ -173,6 +240,13 @@ export const handle = async (interaction) => {
 
 		if (interaction.customId === "wargame:absent") {
 			await setStatus(interaction, PLAYER_STATUS.ABSENT);
+			return;
+		}
+
+		if (interaction.customId.startsWith("wargame:faction:")) {
+			const [, , status, className, faction] = interaction.customId.split(":");
+
+			await setFaction(interaction, status, className, faction);
 			return;
 		}
 

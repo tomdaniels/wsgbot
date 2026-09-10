@@ -2,9 +2,10 @@ export const CLASS_ROLES = [
 	{ name: "Druid", color: 0xff7d0a },
 	{ name: "Hunter", color: 0xabd473 },
 	{ name: "Mage", color: 0x69ccf0 },
+	{ name: "Paladin", color: 0xf58cba },
 	{ name: "Priest", color: 0xffffff },
 	{ name: "Rogue", color: 0xfff569 },
-	{ name: "Shaman", color: 0xf58cba },
+	{ name: "Shaman", color: 0x0070de },
 	{ name: "Warlock", color: 0x9482c9 },
 	{ name: "Warrior", color: 0xc79c6e },
 ];
@@ -17,9 +18,10 @@ const CLASS_INDICATORS = {
 	Druid: "🟠",
 	Hunter: "🟢",
 	Mage: "🔵",
+	Paladin: "🌸",
 	Priest: "⚪",
 	Rogue: "🟡",
-	Shaman: "🌸",
+	Shaman: "🟦",
 	Warlock: "🟣",
 	Warrior: "🟤",
 };

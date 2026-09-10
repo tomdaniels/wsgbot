@@ -1,4 +1,5 @@
 import { memberHasRole } from "../domain/classes.js";
+import { FACTION_LABELS } from "../domain/factions.js";
 import {
 	getRosterSplit,
 	resetRoster,
@@ -43,6 +44,8 @@ const loadEvent = async (interaction) => {
 	return { data, event };
 };
 
+const getFactionFromCustomId = (customId) => customId.split(":")[3];
+
 const handlePick = async (interaction) => {
 	if (!(await requireOrganizer(interaction))) {
 		return;
@@ -55,11 +58,12 @@ const handlePick = async (interaction) => {
 	}
 
 	const { data, event } = loaded;
+	const faction = getFactionFromCustomId(interaction.customId);
 
-	setRosterSelection(event, interaction.values);
+	setRosterSelection(event, faction, interaction.values);
 	await saveWargameData(data);
 
-	await interaction.update(await buildRosterDraftView(event, interaction.guild));
+	await interaction.update(await buildRosterDraftView(event, interaction.guild, faction));
 };
 
 const handleReset = async (interaction) => {
@@ -74,11 +78,12 @@ const handleReset = async (interaction) => {
 	}
 
 	const { data, event } = loaded;
+	const faction = getFactionFromCustomId(interaction.customId);
 
-	resetRoster(event);
+	resetRoster(event, faction);
 	await saveWargameData(data);
 
-	await interaction.update(await buildRosterDraftView(event, interaction.guild));
+	await interaction.update(await buildRosterDraftView(event, interaction.guild, faction));
 };
 
 const handleSubmit = async (interaction) => {
@@ -93,7 +98,8 @@ const handleSubmit = async (interaction) => {
 	}
 
 	const { data, event } = loaded;
-	const { roster } = getRosterSplit(event);
+	const faction = getFactionFromCustomId(interaction.customId);
+	const { roster } = getRosterSplit(event, faction);
 
 	if (roster.length === 0) {
 		await interaction.reply({
@@ -119,23 +125,24 @@ const handleSubmit = async (interaction) => {
 
 	setRosterThread(event, activeThread.id);
 
-	const announcement = await buildRosterAnnouncement(event, interaction.guild);
+	const announcement = await buildRosterAnnouncement(event, interaction.guild, faction);
 
-	const existingMessage = event.roster.messageId
-		? await activeThread.messages.fetch(event.roster.messageId).catch(() => null)
+	const existingMessageId = event.roster[faction]?.messageId;
+	const existingMessage = existingMessageId
+		? await activeThread.messages.fetch(existingMessageId).catch(() => null)
 		: null;
 
 	if (existingMessage) {
 		await existingMessage.edit(announcement);
 	} else {
 		const message = await activeThread.send(announcement);
-		setRosterMessageId(event, message.id);
+		setRosterMessageId(event, faction, message.id);
 	}
 
 	await saveWargameData(data);
 
 	await interaction.update({
-		content: `Roster posted to ${activeThread}.`,
+		content: `${FACTION_LABELS[faction]} roster posted to ${activeThread}.`,
 		components: [],
 	});
 };

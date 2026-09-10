@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from "discord.js";
 import { memberHasRole } from "../domain/classes.js";
+import { FACTION_LABELS, FACTIONS } from "../domain/factions.js";
 import { getEligiblePool } from "../domain/roster.js";
 import { formatEventDateShort } from "../utils/datetime.js";
 import { loadWargameData } from "../utils/wargameStore.js";
@@ -14,6 +15,16 @@ export const data = new SlashCommandBuilder()
 			.setDescription("Wargame to manage")
 			.setRequired(true)
 			.setAutocomplete(true),
+	)
+	.addStringOption((option) =>
+		option
+			.setName("faction")
+			.setDescription("Which faction to roster (only needed for a dual-faction wargame)")
+			.setRequired(false)
+			.addChoices(
+				{ name: FACTION_LABELS[FACTIONS.HORDE], value: FACTIONS.HORDE },
+				{ name: FACTION_LABELS[FACTIONS.ALLIANCE], value: FACTIONS.ALLIANCE },
+			),
 	);
 
 export const autocomplete = async (interaction) => {
@@ -54,9 +65,30 @@ export const execute = async (interaction) => {
 		return;
 	}
 
-	if (getEligiblePool(event).length === 0) {
+	const requestedFaction = interaction.options.getString("faction");
+	const faction = event.faction ?? requestedFaction;
+
+	if (!faction) {
 		await interaction.reply({
-			content: "Nobody is signed up yet — nothing to roster.",
+			content: "This wargame is open to both factions — pass `faction` to pick which one to roster.",
+			flags: 64,
+		});
+
+		return;
+	}
+
+	if (event.faction && requestedFaction && requestedFaction !== event.faction) {
+		await interaction.reply({
+			content: `This wargame is restricted to ${FACTION_LABELS[event.faction]}.`,
+			flags: 64,
+		});
+
+		return;
+	}
+
+	if (getEligiblePool(event, faction).length === 0) {
+		await interaction.reply({
+			content: `Nobody is signed up for ${FACTION_LABELS[faction]} yet — nothing to roster.`,
 			flags: 64,
 		});
 
@@ -64,7 +96,7 @@ export const execute = async (interaction) => {
 	}
 
 	await interaction.reply({
-		...(await buildRosterDraftView(event, interaction.guild)),
+		...(await buildRosterDraftView(event, interaction.guild, faction)),
 		flags: 64,
 	});
 };

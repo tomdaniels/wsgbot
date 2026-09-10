@@ -35,20 +35,20 @@ export const execute = async (interaction) => {
 		data.panels[guild.id],
 	);
 
-	if (existingMessage) {
-		await existingMessage.edit(createClassRolesPanel());
-
-		await interaction.editReply(
-			`Updated the existing class role message in ${existingMessage.channel}.`,
-		);
-
-		return;
-	}
-
-	const message = await interaction.channel.send(createClassRolesPanel());
+	const message = existingMessage
+		? await existingMessage.edit(createClassRolesPanel())
+		: await interaction.channel.send(createClassRolesPanel());
 
 	for (const role of CLASS_ROLES) {
 		await message.react(getClassIndicator(role.name));
+	}
+
+	if (existingMessage) {
+		await interaction.editReply(
+			`Updated the existing class role message in ${message.channel}.`,
+		);
+
+		return;
 	}
 
 	data.panels[guild.id] = {

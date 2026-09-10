@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { client } from "../discord/client.js";
 import { getClassIndicator } from "../domain/classes.js";
+import { FACTION_INDICATORS, FACTION_LABELS } from "../domain/factions.js";
 import { MAX_SIGNUPS, PLAYER_STATUS } from "../domain/wargame.js";
 import { getMemberName } from "../discord/memberNames.js";
 import { formatEventTime } from "../utils/datetime.js";
@@ -22,9 +23,10 @@ export const createSignupPanel = async (event, guild) => {
 
 	const formatSignedUpPlayer = async (player) => {
 		const name = await getMemberName(guild, player.userId);
-		const indicator = getClassIndicator(player.class);
+		const factionIndicator = event.faction ? "" : FACTION_INDICATORS[player.faction] ?? "";
+		const classIndicator = getClassIndicator(player.class);
 
-		return `${indicator} ${name}`;
+		return `${factionIndicator}${classIndicator} ${name}`;
 	};
 
 	const formatNames = async (playerList) => {
@@ -44,9 +46,17 @@ export const createSignupPanel = async (event, guild) => {
 	const tentativeNames = await formatNames(tentative);
 	const absentNames = await formatNames(absent);
 
+	const factionHeader = event.faction
+		? ` — ${FACTION_INDICATORS[event.faction]} ${FACTION_LABELS[event.faction].toUpperCase()} ONLY`
+		: "";
+
+	const signUpLabel = event.faction
+		? `SIGN UP (${FACTION_LABELS[event.faction].toUpperCase()})`
+		: "SIGN UP";
+
 	return {
 		content: [
-			"## WARGAME",
+			`## WARGAME${factionHeader}`,
 			"",
 			formatEventTime(event.date),
 			"",
@@ -61,7 +71,7 @@ export const createSignupPanel = async (event, guild) => {
 			new ActionRowBuilder().addComponents(
 				new ButtonBuilder()
 					.setCustomId("wargame:signup")
-					.setLabel("SIGN UP")
+					.setLabel(signUpLabel)
 					.setStyle(ButtonStyle.Success),
 
 				new ButtonBuilder()

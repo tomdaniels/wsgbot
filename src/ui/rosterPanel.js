@@ -6,6 +6,7 @@ import {
 	StringSelectMenuOptionBuilder,
 } from "discord.js";
 import { getClassIndicator } from "../domain/classes.js";
+import { FACTION_INDICATORS, FACTION_LABELS } from "../domain/factions.js";
 import { getEligiblePool, getRosterIds, getRosterSplit } from "../domain/roster.js";
 import { getMemberName } from "../discord/memberNames.js";
 
@@ -29,14 +30,16 @@ const formatPlayerLines = async (guild, players) => {
 	return lines.join("\n");
 };
 
-export const buildRosterDraftView = async (event, guild) => {
-	const pool = getEligiblePool(event);
-	const rosterIds = new Set(getRosterIds(event));
-	const { roster, bench } = getRosterSplit(event);
+export const buildRosterDraftView = async (event, guild, faction) => {
+	const pool = getEligiblePool(event, faction);
+	const rosterIds = new Set(getRosterIds(event, faction));
+	const { roster, bench } = getRosterSplit(event, faction);
+	const factionLabel = FACTION_LABELS[faction];
+	const factionIndicator = FACTION_INDICATORS[faction];
 
 	if (pool.length === 0) {
 		return {
-			content: "Nobody is signed up yet — nothing to roster.",
+			content: `Nobody is signed up for ${factionLabel} yet — nothing to roster.`,
 			components: [],
 		};
 	}
@@ -59,7 +62,7 @@ export const buildRosterDraftView = async (event, guild) => {
 
 	return {
 		content: [
-			"## ROSTER DRAFT",
+			`## ${factionIndicator} ${factionLabel.toUpperCase()} ROSTER DRAFT`,
 			"",
 			`**ROSTER (${roster.length})**`,
 			rosterLines,
@@ -70,20 +73,20 @@ export const buildRosterDraftView = async (event, guild) => {
 		components: [
 			new ActionRowBuilder().addComponents(
 				new StringSelectMenuBuilder()
-					.setCustomId(`roster:pick:${event.id}`)
-					.setPlaceholder("Select the roster")
+					.setCustomId(`roster:pick:${event.id}:${faction}`)
+					.setPlaceholder(`Select the ${factionLabel} roster`)
 					.setMinValues(0)
 					.setMaxValues(options.length)
 					.addOptions(options),
 			),
 			new ActionRowBuilder().addComponents(
 				new ButtonBuilder()
-					.setCustomId(`roster:submit:${event.id}`)
+					.setCustomId(`roster:submit:${event.id}:${faction}`)
 					.setLabel("SUBMIT")
 					.setStyle(ButtonStyle.Success),
 
 				new ButtonBuilder()
-					.setCustomId(`roster:reset:${event.id}`)
+					.setCustomId(`roster:reset:${event.id}:${faction}`)
 					.setLabel("RESET")
 					.setStyle(ButtonStyle.Danger),
 			),
@@ -91,12 +94,14 @@ export const buildRosterDraftView = async (event, guild) => {
 	};
 };
 
-export const buildRosterAnnouncement = async (event, guild) => {
-	const { roster, bench } = getRosterSplit(event);
+export const buildRosterAnnouncement = async (event, guild, faction) => {
+	const { roster, bench } = getRosterSplit(event, faction);
+	const factionLabel = FACTION_LABELS[faction];
+	const factionIndicator = FACTION_INDICATORS[faction];
 
 	const rosterLines = await formatPlayerLines(guild, roster);
 
-	const lines = ["## ROSTER", "", rosterLines];
+	const lines = [`## ${factionIndicator} ${factionLabel.toUpperCase()} ROSTER`, "", rosterLines];
 
 	if (bench.length > 0) {
 		const benchLines = await Promise.all(
