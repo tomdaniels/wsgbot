@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { client } from "./client.js";
+import { client } from "./discord/client.js";
 import * as classRolesCommand from "./commands/classRoles.js";
 import * as rosterCommand from "./commands/roster.js";
 import * as setupCommand from "./commands/setup.js";

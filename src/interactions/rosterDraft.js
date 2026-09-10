@@ -1,6 +1,6 @@
 import { memberHasRole } from "../domain/classes.js";
 import { getRosterSplit, resetRoster, setRosterSelection, setRosterThread } from "../domain/roster.js";
-import { formatEventDateShort } from "../format.js";
+import { formatEventDateShort } from "../utils/datetime.js";
 import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
 import { buildRosterAnnouncement, buildRosterDraftView } from "../ui/rosterPanel.js";
 

@@ -1,9 +1,9 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { client } from "../client.js";
+import { client } from "../discord/client.js";
 import { getClassIndicator } from "../domain/classes.js";
 import { MAX_SIGNUPS, PLAYER_STATUS } from "../domain/wargame.js";
 import { getMemberName } from "../discord/memberNames.js";
-import { formatEventTime } from "../format.js";
+import { formatEventTime } from "../utils/datetime.js";
 
 export const createSignupPanel = async (event, guild) => {
 	const players = Object.values(event.players);

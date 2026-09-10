@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "discord.js";
 import { memberHasRole } from "../domain/classes.js";
 import { getEligiblePool } from "../domain/roster.js";
-import { formatEventDateShort } from "../format.js";
+import { formatEventDateShort } from "../utils/datetime.js";
 import { loadWargameData } from "../utils/wargameStore.js";
 import { buildRosterDraftView } from "../ui/rosterPanel.js";
 
