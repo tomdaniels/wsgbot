@@ -29,10 +29,15 @@ client.once("clientReady", () => {
 	console.log(`Logged in as ${client.user.tag}`);
 });
 
+const MISSING_PERMISSIONS = 50013;
+
 const reportInteractionError = async (interaction, error) => {
 	console.error(error);
 
-	const content = "Something went wrong running that.";
+	const content =
+		error.code === MISSING_PERMISSIONS
+			? "I don't have permission to do that here — my role needs to be positioned above the roles/channels I'm managing. Check Server Settings → Roles and move my role up."
+			: "Something went wrong running that.";
 
 	if (interaction.deferred || interaction.replied) {
 		await interaction.editReply({ content }).catch(console.error);
