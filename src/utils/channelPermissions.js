@@ -10,3 +10,14 @@ export const readOnlyChannelOverwrites = (guild) => [
 		allow: [PermissionFlagsBits.SendMessages],
 	},
 ];
+
+export const organizerOnlyChannelOverwrites = (guild, organizerRoleId) => [
+	{
+		id: guild.roles.everyone.id,
+		deny: [PermissionFlagsBits.ViewChannel],
+	},
+	{
+		id: organizerRoleId,
+		allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect],
+	},
+];

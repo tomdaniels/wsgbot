@@ -1,6 +1,9 @@
 import { ChannelType, SlashCommandBuilder } from "discord.js";
-import { ALL_ROLES } from "../domain/classes.js";
-import { readOnlyChannelOverwrites } from "../utils/channelPermissions.js";
+import { ALL_ROLES, ORGANIZER_ROLE } from "../domain/classes.js";
+import {
+	organizerOnlyChannelOverwrites,
+	readOnlyChannelOverwrites,
+} from "../utils/channelPermissions.js";
 import { findOrCreateChannel } from "../utils/findOrCreateChannel.js";
 import { findOrCreateRole } from "../utils/findOrCreateRole.js";
 import * as classRolesCommand from "./classRoles.js";
@@ -56,8 +59,14 @@ export const execute = async (interaction) => {
 		permissionOverwrites: readOnlyChannelOverwrites(guild),
 	});
 
+	let organizerRole;
+
 	for (const role of ALL_ROLES) {
-		await findOrCreateRole(guild, role);
+		const created = await findOrCreateRole(guild, role);
+
+		if (role.name === ORGANIZER_ROLE.name) {
+			organizerRole = created;
+		}
 	}
 
 	await findOrCreateChannel(guild, {
@@ -76,6 +85,7 @@ export const execute = async (interaction) => {
 		name: "sidebar",
 		type: ChannelType.GuildVoice,
 		parentId: voiceCategory.id,
+		permissionOverwrites: organizerOnlyChannelOverwrites(guild, organizerRole.id),
 	});
 
 	await interaction.editReply(
