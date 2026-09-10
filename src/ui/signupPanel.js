@@ -39,7 +39,11 @@ const buildFactionContainer = async (guild, faction, players) => {
 		.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
 };
 
-export const createSignupPanel = async (event, guild, { interactive = true } = {}) => {
+export const createSignupPanel = async (
+	event,
+	guild,
+	{ interactive = true } = {},
+) => {
 	const players = Object.values(event.players);
 
 	const signedUp = players.filter(
@@ -87,15 +91,13 @@ export const createSignupPanel = async (event, guild, { interactive = true } = {
 		? ` — ${FACTION_LABELS[event.faction].toUpperCase()} SIGN UPS`
 		: "";
 
-	const signUpLabel = event.faction
-		? `SIGN UP (${FACTION_LABELS[event.faction].toUpperCase()})`
-		: "SIGN UP";
-
 	return {
 		flags: MessageFlags.IsComponentsV2,
 		components: [
 			new TextDisplayBuilder().setContent(
-				[`## WARGAME${factionHeader}`, "", formatEventTime(event.date)].join("\n"),
+				[`## WARGAME${factionHeader}`, "", formatEventTime(event.date)].join(
+					"\n",
+				),
 			),
 
 			...factionContainers,
@@ -109,7 +111,7 @@ export const createSignupPanel = async (event, guild, { interactive = true } = {
 						new ActionRowBuilder().addComponents(
 							new ButtonBuilder()
 								.setCustomId("wargame:signup")
-								.setLabel(signUpLabel)
+								.setLabel("SIGN UP")
 								.setStyle(ButtonStyle.Success),
 
 							new ButtonBuilder()
