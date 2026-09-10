@@ -3,6 +3,11 @@ import { ALL_ROLES } from "../domain/classes.js";
 import { readOnlyChannelOverwrites } from "../utils/channelPermissions.js";
 import { findOrCreateChannel } from "../utils/findOrCreateChannel.js";
 import { findOrCreateRole } from "../utils/findOrCreateRole.js";
+import * as classRolesCommand from "./classRoles.js";
+import * as rosterCommand from "./roster.js";
+import * as wargameCommand from "./wargame.js";
+
+const GUILD_COMMANDS = [wargameCommand, rosterCommand, classRolesCommand];
 
 export const data = new SlashCommandBuilder()
 	.setName("setup")
@@ -12,6 +17,8 @@ export const execute = async (interaction) => {
 	const guild = interaction.guild;
 
 	await interaction.deferReply({ flags: 64 });
+
+	await guild.commands.set(GUILD_COMMANDS.map((command) => command.data.toJSON()));
 
 	const textCategory = guild.channels.cache.find(
 		(channel) =>
@@ -72,6 +79,6 @@ export const execute = async (interaction) => {
 	});
 
 	await interaction.editReply(
-		`Setup complete: ${welcome} and ${wargame}. Roles and voice channels are ready.`,
+		`Setup complete: ${welcome} and ${wargame}. Roles, voice channels, and commands are ready.`,
 	);
 };

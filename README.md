@@ -8,7 +8,9 @@ A player needs a class role (from `/class-roles`) before they can sign up (`/war
 Run in this order — each one depends on the last.
 
 ### `/setup`
-Creates the channels (`#welcome`, `#wargame`, voice channels) and the class + Organizer roles. Run this once per server, or again any time to fill in anything missing.
+Creates the channels (`#welcome`, `#wargame`, voice channels), the class + Organizer roles, and registers `/wargame`, `/roster`, `/class-roles` for this server. Run this once per server, or again any time to fill in anything missing or after a deploy that changed one of those commands' options.
+
+`/setup` itself is registered globally (once, via `src/discord/register-commands.js`), so it's available in any server the bot is invited to with no manual step — invite the bot, run `/setup`, done. The other three commands are guild-scoped and only appear after `/setup` has run in that server.
 
 ### `/class-roles`
 Posts the reaction-role message (in whatever channel you run it in — put it in `#welcome`). Players react with their class's emoji to get that class role, and remove the reaction to remove it. **Required before `/wargame` signup works** — `/wargame`'s sign-up buttons check a player's class roles to know what they can sign up as.
