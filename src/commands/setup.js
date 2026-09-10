@@ -35,7 +35,7 @@ export const execute = async (interaction) => {
 	}
 
 	const welcome = await findOrCreateChannel(guild, {
-		name: "welcome",
+		name: "whalecum",
 		type: ChannelType.GuildText,
 		parentId: textCategory.id,
 	});
