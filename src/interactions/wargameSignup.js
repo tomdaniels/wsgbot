@@ -138,7 +138,7 @@ const setStatus = async (interaction, status) => {
 	if (playerClasses.length === 0) {
 		await interaction.reply({
 			content:
-				"You don't have a class role yet. Nominate your classes in #whalecum.",
+				"You don't have a class role yet. Nominate your classes in #class-roles.",
 			flags: 64,
 		});
 
@@ -150,7 +150,7 @@ const setStatus = async (interaction, status) => {
 
 		if (eligibleClasses.length === 0) {
 			await interaction.reply({
-				content: `No ${FACTION_LABELS[event.faction]} classes found, add your class via #whalecum.`,
+				content: `No ${FACTION_LABELS[event.faction]} classes found, add your class via #class-roles.`,
 				flags: 64,
 			});
 

@@ -1,8 +1,8 @@
 import "dotenv/config";
 import { client } from "./discord/client.js";
 import * as classRolesCommand from "./commands/classRoles.js";
+import * as initCommand from "./commands/init.js";
 import * as rosterCommand from "./commands/roster.js";
-import * as setupCommand from "./commands/setup.js";
 import * as wargameCommand from "./commands/wargame.js";
 import {
 	handleReactionAdd,
@@ -12,7 +12,7 @@ import * as rosterDraft from "./interactions/rosterDraft.js";
 import * as wargameSignup from "./interactions/wargameSignup.js";
 
 const commands = new Map(
-	[setupCommand, wargameCommand, rosterCommand, classRolesCommand].map(
+	[initCommand, wargameCommand, rosterCommand, classRolesCommand].map(
 		(command) => [command.data.name, command],
 	),
 );

@@ -1,5 +1,8 @@
-import { SlashCommandBuilder } from "discord.js";
+import { ChannelType, SlashCommandBuilder } from "discord.js";
 import { CLASS_ROLES, getClassIndicator } from "../domain/classes.js";
+import { readOnlyChannelOverwrites } from "../utils/channelPermissions.js";
+import { findOrCreateChannel } from "../utils/findOrCreateChannel.js";
+import { findOrCreateRole } from "../utils/findOrCreateRole.js";
 import {
 	loadClassRolesData,
 	saveClassRolesData,
@@ -8,7 +11,7 @@ import { createClassRolesPanel } from "../ui/classRolesPanel.js";
 
 export const data = new SlashCommandBuilder()
 	.setName("class-roles")
-	.setDescription("Post the class role picker message in this channel");
+	.setDescription("Post the class role picker message");
 
 const findExistingMessage = async (guild, panel) => {
 	if (!panel) {
@@ -29,15 +32,31 @@ export const execute = async (interaction) => {
 
 	await interaction.deferReply({ flags: 64 });
 
+	for (const role of CLASS_ROLES) {
+		await findOrCreateRole(guild, role);
+	}
+
 	const data = await loadClassRolesData();
-	const existingMessage = await findExistingMessage(
-		guild,
-		data.panels[guild.id],
+	const existingMessage = await findExistingMessage(guild, data.panels[guild.id]);
+
+	const textCategory = guild.channels.cache.find(
+		(channel) =>
+			channel.type === ChannelType.GuildCategory &&
+			channel.name.toLowerCase() === "text channels",
 	);
+
+	const channel =
+		existingMessage?.channel ??
+		(await findOrCreateChannel(guild, {
+			name: "class-roles",
+			type: ChannelType.GuildText,
+			parentId: textCategory?.id ?? null,
+			permissionOverwrites: readOnlyChannelOverwrites(guild),
+		}));
 
 	const message = existingMessage
 		? await existingMessage.edit(createClassRolesPanel())
-		: await interaction.channel.send(createClassRolesPanel());
+		: await channel.send(createClassRolesPanel());
 
 	for (const role of CLASS_ROLES) {
 		await message.react(getClassIndicator(role.name));
