@@ -43,6 +43,14 @@ export const execute = async (interaction) => {
 		await message.react(getClassIndicator(role.name));
 	}
 
+	const currentIndicators = new Set(CLASS_ROLES.map((role) => getClassIndicator(role.name)));
+
+	for (const reaction of message.reactions.cache.values()) {
+		if (!currentIndicators.has(reaction.emoji.name)) {
+			await reaction.remove();
+		}
+	}
+
 	if (existingMessage) {
 		await interaction.editReply(
 			`Updated the existing class role message in ${message.channel}.`,
