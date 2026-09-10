@@ -22,6 +22,10 @@ export const setRosterThread = (event, threadId) => {
 	event.roster = { ...(event.roster ?? {}), threadId };
 };
 
+export const setRosterMessageId = (event, messageId) => {
+	event.roster = { ...(event.roster ?? {}), messageId };
+};
+
 export const getRosterSplit = (event) => {
 	const pool = getEligiblePool(event);
 	const rosterIds = new Set(getRosterIds(event));

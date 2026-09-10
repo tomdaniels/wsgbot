@@ -1,6 +1,6 @@
 export const findOrCreateChannel = async (
 	guild,
-	{ name, type, parentId = null },
+	{ name, type, parentId = null, permissionOverwrites },
 ) => {
 	const existing = guild.channels.cache.find(
 		(channel) =>
@@ -9,12 +9,14 @@ export const findOrCreateChannel = async (
 			channel.parentId === parentId,
 	);
 
-	return (
-		existing ??
-		guild.channels.create({
-			name,
-			type,
-			parent: parentId,
-		})
-	);
+	if (existing) {
+		return existing;
+	}
+
+	return guild.channels.create({
+		name,
+		type,
+		parent: parentId,
+		permissionOverwrites,
+	});
 };

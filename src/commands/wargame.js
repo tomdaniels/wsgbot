@@ -1,5 +1,7 @@
 import { ChannelType, SlashCommandBuilder } from "discord.js";
 import { createEvent } from "../domain/wargame.js";
+import { readOnlyChannelOverwrites } from "../utils/channelPermissions.js";
+import { findOrCreateChannel } from "../utils/findOrCreateChannel.js";
 import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
 import { createSignupPanel } from "../ui/signupPanel.js";
 
@@ -30,19 +32,18 @@ export const execute = async (interaction) => {
 
 	const guild = interaction.guild;
 
-	const channel = guild.channels.cache.find(
+	const textCategory = guild.channels.cache.find(
 		(channel) =>
-			channel.type === ChannelType.GuildText && channel.name === "wargame",
+			channel.type === ChannelType.GuildCategory &&
+			channel.name.toLowerCase() === "text channels",
 	);
 
-	if (!channel) {
-		await interaction.reply({
-			content: "Couldn't find the `#wargame` channel. Run `/setup` first.",
-			flags: 64,
-		});
-
-		return;
-	}
+	const channel = await findOrCreateChannel(guild, {
+		name: "wargame",
+		type: ChannelType.GuildText,
+		parentId: textCategory?.id ?? null,
+		permissionOverwrites: readOnlyChannelOverwrites(guild),
+	});
 
 	const event = createEvent({
 		guildId: guild.id,

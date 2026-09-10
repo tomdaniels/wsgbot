@@ -1,5 +1,6 @@
 import { ChannelType, SlashCommandBuilder } from "discord.js";
 import { ALL_ROLES } from "../domain/classes.js";
+import { readOnlyChannelOverwrites } from "../utils/channelPermissions.js";
 import { findOrCreateChannel } from "../utils/findOrCreateChannel.js";
 import { findOrCreateRole } from "../utils/findOrCreateRole.js";
 
@@ -38,12 +39,14 @@ export const execute = async (interaction) => {
 		name: "whalecum",
 		type: ChannelType.GuildText,
 		parentId: textCategory.id,
+		permissionOverwrites: readOnlyChannelOverwrites(guild),
 	});
 
 	const wargame = await findOrCreateChannel(guild, {
 		name: "wargame",
 		type: ChannelType.GuildText,
 		parentId: textCategory.id,
+		permissionOverwrites: readOnlyChannelOverwrites(guild),
 	});
 
 	for (const role of ALL_ROLES) {

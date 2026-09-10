@@ -1,5 +1,11 @@
 import { memberHasRole } from "../domain/classes.js";
-import { getRosterSplit, resetRoster, setRosterSelection, setRosterThread } from "../domain/roster.js";
+import {
+	getRosterSplit,
+	resetRoster,
+	setRosterMessageId,
+	setRosterSelection,
+	setRosterThread,
+} from "../domain/roster.js";
 import { formatEventDateShort } from "../utils/datetime.js";
 import { loadWargameData, saveWargameData } from "../utils/wargameStore.js";
 import { buildRosterAnnouncement, buildRosterDraftView } from "../ui/rosterPanel.js";
@@ -111,12 +117,22 @@ const handleSubmit = async (interaction) => {
 			name: `Roster – ${formatEventDateShort(event.date)}`,
 		}));
 
-	if (!event.roster.threadId) {
-		setRosterThread(event, activeThread.id);
-		await saveWargameData(data);
+	setRosterThread(event, activeThread.id);
+
+	const announcement = await buildRosterAnnouncement(event, interaction.guild);
+
+	const existingMessage = event.roster.messageId
+		? await activeThread.messages.fetch(event.roster.messageId).catch(() => null)
+		: null;
+
+	if (existingMessage) {
+		await existingMessage.edit(announcement);
+	} else {
+		const message = await activeThread.send(announcement);
+		setRosterMessageId(event, message.id);
 	}
 
-	await activeThread.send(await buildRosterAnnouncement(event, interaction.guild));
+	await saveWargameData(data);
 
 	await interaction.update({
 		content: `Roster posted to ${activeThread}.`,
