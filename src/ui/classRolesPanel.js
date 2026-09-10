@@ -2,9 +2,9 @@ import { CLASS_ROLES, getClassIndicator } from "../domain/classes.js";
 
 export const createClassRolesPanel = () => ({
 	content: [
-		"## WELCOME - PICK YOUR CLASS",
+		"## WELCOME",
 		"",
-		"React with your class to get the matching role. You will be able to sign up to games for that class based on which roles are assigned.",
+		"What class would you play for wargames? Can be horde or alliance, signups are based on what you nominate below.",
 		"",
 		...CLASS_ROLES.map(
 			(role) => `${getClassIndicator(role.name)} — ${role.name}`,
