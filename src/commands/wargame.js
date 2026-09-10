@@ -65,7 +65,9 @@ export const execute = async (interaction) => {
 			? await previousChannel.messages.fetch(previousEvent.messageId).catch(() => null)
 			: null;
 
-		await previousMessage?.edit({ components: [] }).catch(() => null);
+		await previousMessage
+			?.edit(await createSignupPanel(previousEvent, guild, { interactive: false }))
+			.catch(() => null);
 	}
 
 	const faction = interaction.options.getString("faction");

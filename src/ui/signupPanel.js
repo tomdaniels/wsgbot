@@ -2,7 +2,9 @@ import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
-	EmbedBuilder,
+	ContainerBuilder,
+	MessageFlags,
+	TextDisplayBuilder,
 } from "discord.js";
 import { client } from "../discord/client.js";
 import { getMemberName } from "../discord/memberNames.js";
@@ -22,26 +24,22 @@ const formatSignedUpPlayer = async (guild, player) => {
 	return `${indicator} ${name}`;
 };
 
-const buildFactionEmbed = async (guild, faction, players) => {
+const buildFactionContainer = async (guild, faction, players) => {
 	const lines = await Promise.all(
 		players.map((player) => formatSignedUpPlayer(guild, player)),
 	);
 
-	return new EmbedBuilder()
-		.setColor(FACTION_COLORS[faction])
-		.setTitle(
-			`${FACTION_LABELS[faction].toUpperCase()} (${players.length}/${MAX_SIGNUPS})`,
-		)
-		.setDescription(lines.length > 0 ? lines.join("\n") : "—");
+	const content = [
+		`**${FACTION_LABELS[faction].toUpperCase()} (${players.length}/${MAX_SIGNUPS})**`,
+		lines.length > 0 ? lines.join("\n") : "—",
+	].join("\n");
+
+	return new ContainerBuilder()
+		.setAccentColor(FACTION_COLORS[faction])
+		.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));
 };
 
-const buildTentativeAbsentEmbed = (tentativeNames, absentNames) =>
-	new EmbedBuilder().addFields(
-		{ name: "Tentative", value: tentativeNames, inline: true },
-		{ name: "Absent", value: absentNames, inline: true },
-	);
-
-export const createSignupPanel = async (event, guild) => {
+export const createSignupPanel = async (event, guild, { interactive = true } = {}) => {
 	const players = Object.values(event.players);
 
 	const signedUp = players.filter(
@@ -75,17 +73,15 @@ export const createSignupPanel = async (event, guild) => {
 		? [event.faction]
 		: [FACTIONS.ALLIANCE, FACTIONS.HORDE];
 
-	const factionEmbeds = await Promise.all(
+	const factionContainers = await Promise.all(
 		factions.map((faction) =>
-			buildFactionEmbed(
+			buildFactionContainer(
 				guild,
 				faction,
 				signedUp.filter((player) => player.faction === faction),
 			),
 		),
 	);
-
-	const embeds = [...factionEmbeds, buildTentativeAbsentEmbed(tentativeNames, absentNames)];
 
 	const factionHeader = event.faction
 		? ` — ${FACTION_LABELS[event.faction].toUpperCase()} SIGN UPS`
@@ -96,29 +92,38 @@ export const createSignupPanel = async (event, guild) => {
 		: "SIGN UP";
 
 	return {
-		content: [
-			`## WARGAME${factionHeader}`,
-			"",
-			formatEventTime(event.date),
-		].join("\n"),
-		embeds,
+		flags: MessageFlags.IsComponentsV2,
 		components: [
-			new ActionRowBuilder().addComponents(
-				new ButtonBuilder()
-					.setCustomId("wargame:signup")
-					.setLabel(signUpLabel)
-					.setStyle(ButtonStyle.Success),
-
-				new ButtonBuilder()
-					.setCustomId("wargame:tentative")
-					.setLabel("TENTATIVE")
-					.setStyle(ButtonStyle.Secondary),
-
-				new ButtonBuilder()
-					.setCustomId("wargame:absent")
-					.setLabel("ABSENT")
-					.setStyle(ButtonStyle.Secondary),
+			new TextDisplayBuilder().setContent(
+				[`## WARGAME${factionHeader}`, "", formatEventTime(event.date)].join("\n"),
 			),
+
+			...factionContainers,
+
+			new TextDisplayBuilder().setContent(
+				`-# **Tentative:** ${tentativeNames}  •  **Absent:** ${absentNames}`,
+			),
+
+			...(interactive
+				? [
+						new ActionRowBuilder().addComponents(
+							new ButtonBuilder()
+								.setCustomId("wargame:signup")
+								.setLabel(signUpLabel)
+								.setStyle(ButtonStyle.Success),
+
+							new ButtonBuilder()
+								.setCustomId("wargame:tentative")
+								.setLabel("TENTATIVE")
+								.setStyle(ButtonStyle.Secondary),
+
+							new ButtonBuilder()
+								.setCustomId("wargame:absent")
+								.setLabel("ABSENT")
+								.setStyle(ButtonStyle.Secondary),
+						),
+					]
+				: []),
 		],
 	};
 };
