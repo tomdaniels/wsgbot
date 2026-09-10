@@ -18,10 +18,10 @@ const CLASS_INDICATORS = {
 	Druid: "🟠",
 	Hunter: "🟢",
 	Mage: "🔵",
-	Paladin: "🌸",
+	Paladin: "🩷",
 	Priest: "⚪",
 	Rogue: "🟡",
-	Shaman: "🟦",
+	Shaman: "🌸",
 	Warlock: "🟣",
 	Warrior: "🟤",
 };

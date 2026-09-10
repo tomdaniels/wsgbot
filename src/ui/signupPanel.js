@@ -1,9 +1,18 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
+import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	EmbedBuilder,
+} from "discord.js";
 import { client } from "../discord/client.js";
-import { getClassIndicator } from "../domain/classes.js";
-import { FACTION_COLORS, FACTION_LABELS, FACTIONS } from "../domain/factions.js";
-import { MAX_SIGNUPS, PLAYER_STATUS } from "../domain/wargame.js";
 import { getMemberName } from "../discord/memberNames.js";
+import { getClassIndicator } from "../domain/classes.js";
+import {
+	FACTION_COLORS,
+	FACTION_LABELS,
+	FACTIONS,
+} from "../domain/factions.js";
+import { MAX_SIGNUPS, PLAYER_STATUS } from "../domain/wargame.js";
 import { formatEventTime } from "../utils/datetime.js";
 
 const formatSignedUpPlayer = async (guild, player) => {
@@ -14,11 +23,15 @@ const formatSignedUpPlayer = async (guild, player) => {
 };
 
 const buildFactionEmbed = async (guild, faction, players) => {
-	const lines = await Promise.all(players.map((player) => formatSignedUpPlayer(guild, player)));
+	const lines = await Promise.all(
+		players.map((player) => formatSignedUpPlayer(guild, player)),
+	);
 
 	return new EmbedBuilder()
 		.setColor(FACTION_COLORS[faction])
-		.setTitle(`${FACTION_LABELS[faction].toUpperCase()} (${players.length}/${MAX_SIGNUPS})`)
+		.setTitle(
+			`${FACTION_LABELS[faction].toUpperCase()} (${players.length}/${MAX_SIGNUPS})`,
+		)
 		.setDescription(lines.length > 0 ? lines.join("\n") : "—");
 };
 
@@ -52,16 +65,22 @@ export const createSignupPanel = async (event, guild) => {
 	const tentativeNames = await formatNames(tentative);
 	const absentNames = await formatNames(absent);
 
-	const factions = event.faction ? [event.faction] : [FACTIONS.ALLIANCE, FACTIONS.HORDE];
+	const factions = event.faction
+		? [event.faction]
+		: [FACTIONS.ALLIANCE, FACTIONS.HORDE];
 
 	const embeds = await Promise.all(
 		factions.map((faction) =>
-			buildFactionEmbed(guild, faction, signedUp.filter((player) => player.faction === faction)),
+			buildFactionEmbed(
+				guild,
+				faction,
+				signedUp.filter((player) => player.faction === faction),
+			),
 		),
 	);
 
 	const factionHeader = event.faction
-		? ` — ${FACTION_LABELS[event.faction].toUpperCase()} ONLY`
+		? ` — ${FACTION_LABELS[event.faction].toUpperCase()} SIGN UPS`
 		: "";
 
 	const signUpLabel = event.faction
