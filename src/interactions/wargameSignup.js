@@ -1,6 +1,10 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import { getLockedFaction, getMemberClasses } from "../domain/classes.js";
-import { FACTION_INDICATORS, FACTION_LABELS, FACTIONS } from "../domain/factions.js";
+import {
+	FACTION_INDICATORS,
+	FACTION_LABELS,
+	FACTIONS,
+} from "../domain/factions.js";
 import {
 	getPlayer,
 	isSignupFull,
@@ -35,7 +39,9 @@ const buildFactionPrompt = (status, className) => ({
 	components: [
 		new ActionRowBuilder().addComponents(
 			new ButtonBuilder()
-				.setCustomId(`wargame:faction:${status}:${className}:${FACTIONS.ALLIANCE}`)
+				.setCustomId(
+					`wargame:faction:${status}:${className}:${FACTIONS.ALLIANCE}`,
+				)
 				.setLabel(FACTION_LABELS[FACTIONS.ALLIANCE])
 				.setEmoji(FACTION_INDICATORS[FACTIONS.ALLIANCE])
 				.setStyle(ButtonStyle.Primary),
@@ -59,12 +65,33 @@ const resolveFaction = (event, className) => {
 	return { faction: event.faction ?? lockedFaction ?? null };
 };
 
+const getEligibleClasses = (event, playerClasses) => {
+	if (!event.faction) {
+		return playerClasses;
+	}
+
+	return playerClasses.filter((className) => {
+		const lockedFaction = getLockedFaction(className);
+
+		return !lockedFaction || lockedFaction === event.faction;
+	});
+};
+
 const factionConflictMessage = (event, className) =>
 	`${className} is ${FACTION_LABELS[getLockedFaction(className)]}-only, and this wargame is ${FACTION_LABELS[event.faction]}-only.`;
 
-const finalizeSignUp = async ({ interaction, event, data, className, faction, mode }) => {
+const finalizeSignUp = async ({
+	interaction,
+	event,
+	data,
+	className,
+	faction,
+	mode,
+}) => {
 	const respond = (payload) =>
-		mode === "update" ? interaction.update(payload) : interaction.reply({ ...payload, flags: 64 });
+		mode === "update"
+			? interaction.update(payload)
+			: interaction.reply({ ...payload, flags: 64 });
 
 	if (isSignupFull(event, interaction.user.id, faction)) {
 		await respond({
@@ -75,7 +102,13 @@ const finalizeSignUp = async ({ interaction, event, data, className, faction, mo
 		return;
 	}
 
-	setPlayerSignup(event, interaction.user.id, PLAYER_STATUS.SIGNED_UP, className, faction);
+	setPlayerSignup(
+		event,
+		interaction.user.id,
+		PLAYER_STATUS.SIGNED_UP,
+		className,
+		faction,
+	);
 
 	await saveWargameData(data);
 	await updateSignupPanel(event, interaction.guild);
@@ -113,29 +146,41 @@ const setStatus = async (interaction, status) => {
 	}
 
 	if (status === PLAYER_STATUS.SIGNED_UP) {
-		if (playerClasses.length > 1) {
-			await promptClassChoice(interaction, status, playerClasses);
-			return;
-		}
+		const eligibleClasses = getEligibleClasses(event, playerClasses);
 
-		const className = playerClasses[0];
-		const resolved = resolveFaction(event, className);
-
-		if (resolved.conflict) {
+		if (eligibleClasses.length === 0) {
 			await interaction.reply({
-				content: factionConflictMessage(event, className),
+				content: `No ${FACTION_LABELS[event.faction]} classes found, add your class via #whalecum.`,
 				flags: 64,
 			});
 
 			return;
 		}
 
-		if (resolved.faction) {
-			await finalizeSignUp({ interaction, event, data, className, faction: resolved.faction, mode: "reply" });
+		if (eligibleClasses.length > 1) {
+			await promptClassChoice(interaction, status, eligibleClasses);
 			return;
 		}
 
-		await interaction.reply({ ...buildFactionPrompt(status, className), flags: 64 });
+		const className = eligibleClasses[0];
+		const resolved = resolveFaction(event, className);
+
+		if (resolved.faction) {
+			await finalizeSignUp({
+				interaction,
+				event,
+				data,
+				className,
+				faction: resolved.faction,
+				mode: "reply",
+			});
+			return;
+		}
+
+		await interaction.reply({
+			...buildFactionPrompt(status, className),
+			flags: 64,
+		});
 		return;
 	}
 
@@ -204,7 +249,14 @@ const setClass = async (interaction, status, className) => {
 		}
 
 		if (resolved.faction) {
-			await finalizeSignUp({ interaction, event, data, className, faction: resolved.faction, mode: "update" });
+			await finalizeSignUp({
+				interaction,
+				event,
+				data,
+				className,
+				faction: resolved.faction,
+				mode: "update",
+			});
 			return;
 		}
 
@@ -268,7 +320,14 @@ const setFaction = async (interaction, status, className, faction) => {
 		return;
 	}
 
-	await finalizeSignUp({ interaction, event, data, className, faction, mode: "update" });
+	await finalizeSignUp({
+		interaction,
+		event,
+		data,
+		className,
+		faction,
+		mode: "update",
+	});
 };
 
 export const handle = async (interaction) => {
