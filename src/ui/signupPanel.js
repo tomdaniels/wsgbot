@@ -1,10 +1,26 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
 import { client } from "../discord/client.js";
 import { getClassIndicator } from "../domain/classes.js";
-import { FACTION_INDICATORS, FACTION_LABELS } from "../domain/factions.js";
+import { FACTION_COLORS, FACTION_LABELS, FACTIONS } from "../domain/factions.js";
 import { MAX_SIGNUPS, PLAYER_STATUS } from "../domain/wargame.js";
 import { getMemberName } from "../discord/memberNames.js";
 import { formatEventTime } from "../utils/datetime.js";
+
+const formatSignedUpPlayer = async (guild, player) => {
+	const name = await getMemberName(guild, player.userId);
+	const indicator = getClassIndicator(player.class);
+
+	return `${indicator} ${name}`;
+};
+
+const buildFactionEmbed = async (guild, faction, players) => {
+	const lines = await Promise.all(players.map((player) => formatSignedUpPlayer(guild, player)));
+
+	return new EmbedBuilder()
+		.setColor(FACTION_COLORS[faction])
+		.setTitle(`${FACTION_LABELS[faction].toUpperCase()} (${players.length}/${MAX_SIGNUPS})`)
+		.setDescription(lines.length > 0 ? lines.join("\n") : "—");
+};
 
 export const createSignupPanel = async (event, guild) => {
 	const players = Object.values(event.players);
@@ -21,14 +37,6 @@ export const createSignupPanel = async (event, guild) => {
 		(player) => player.status === PLAYER_STATUS.ABSENT,
 	);
 
-	const formatSignedUpPlayer = async (player) => {
-		const name = await getMemberName(guild, player.userId);
-		const factionIndicator = event.faction ? "" : FACTION_INDICATORS[player.faction] ?? "";
-		const classIndicator = getClassIndicator(player.class);
-
-		return `${factionIndicator}${classIndicator} ${name}`;
-	};
-
 	const formatNames = async (playerList) => {
 		if (playerList.length === 0) {
 			return "—";
@@ -41,13 +49,19 @@ export const createSignupPanel = async (event, guild) => {
 		return names.join(", ");
 	};
 
-	const signedUpPlayers = await Promise.all(signedUp.map(formatSignedUpPlayer));
-
 	const tentativeNames = await formatNames(tentative);
 	const absentNames = await formatNames(absent);
 
+	const factions = event.faction ? [event.faction] : [FACTIONS.ALLIANCE, FACTIONS.HORDE];
+
+	const embeds = await Promise.all(
+		factions.map((faction) =>
+			buildFactionEmbed(guild, faction, signedUp.filter((player) => player.faction === faction)),
+		),
+	);
+
 	const factionHeader = event.faction
-		? ` — ${FACTION_INDICATORS[event.faction]} ${FACTION_LABELS[event.faction].toUpperCase()} ONLY`
+		? ` — ${FACTION_LABELS[event.faction].toUpperCase()} ONLY`
 		: "";
 
 	const signUpLabel = event.faction
@@ -60,13 +74,10 @@ export const createSignupPanel = async (event, guild) => {
 			"",
 			formatEventTime(event.date),
 			"",
-			`**SIGNED UP ${signedUp.length}/${MAX_SIGNUPS}**`,
-			"",
-			signedUpPlayers.length > 0 ? signedUpPlayers.join("\n") : "—",
-			"",
 			`**TENTATIVE:** ${tentativeNames}`,
 			`**ABSENT:** ${absentNames}`,
 		].join("\n"),
+		embeds,
 		components: [
 			new ActionRowBuilder().addComponents(
 				new ButtonBuilder()

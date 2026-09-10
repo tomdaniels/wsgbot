@@ -12,3 +12,8 @@ export const FACTION_INDICATORS = {
 	[FACTIONS.HORDE]: "🔴",
 	[FACTIONS.ALLIANCE]: "🔵",
 };
+
+export const FACTION_COLORS = {
+	[FACTIONS.HORDE]: 0xb30000,
+	[FACTIONS.ALLIANCE]: 0x0078d7,
+};

@@ -5,7 +5,7 @@ export const CLASS_ROLES = [
 	{ name: "Paladin", color: 0xf58cba },
 	{ name: "Priest", color: 0xffffff },
 	{ name: "Rogue", color: 0xfff569 },
-	{ name: "Shaman", color: 0x0070de },
+	{ name: "Shaman", color: 0x0070dd },
 	{ name: "Warlock", color: 0x9482c9 },
 	{ name: "Warrior", color: 0xc79c6e },
 ];
