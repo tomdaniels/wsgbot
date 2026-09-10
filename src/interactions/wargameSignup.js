@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { getMemberClasses } from "../domain/classes.js";
+import { getLockedFaction, getMemberClasses } from "../domain/classes.js";
 import { FACTION_INDICATORS, FACTION_LABELS, FACTIONS } from "../domain/factions.js";
 import {
 	getPlayer,
@@ -48,6 +48,19 @@ const buildFactionPrompt = (status, className) => ({
 		),
 	],
 });
+
+const resolveFaction = (event, className) => {
+	const lockedFaction = getLockedFaction(className);
+
+	if (event.faction && lockedFaction && event.faction !== lockedFaction) {
+		return { conflict: true };
+	}
+
+	return { faction: event.faction ?? lockedFaction ?? null };
+};
+
+const factionConflictMessage = (event, className) =>
+	`${className} is ${FACTION_LABELS[getLockedFaction(className)]}-only, and this wargame is ${FACTION_LABELS[event.faction]}-only.`;
 
 const finalizeSignUp = async ({ interaction, event, data, className, faction, mode }) => {
 	const respond = (payload) =>
@@ -106,9 +119,19 @@ const setStatus = async (interaction, status) => {
 		}
 
 		const className = playerClasses[0];
+		const resolved = resolveFaction(event, className);
 
-		if (event.faction) {
-			await finalizeSignUp({ interaction, event, data, className, faction: event.faction, mode: "reply" });
+		if (resolved.conflict) {
+			await interaction.reply({
+				content: factionConflictMessage(event, className),
+				flags: 64,
+			});
+
+			return;
+		}
+
+		if (resolved.faction) {
+			await finalizeSignUp({ interaction, event, data, className, faction: resolved.faction, mode: "reply" });
 			return;
 		}
 
@@ -169,8 +192,19 @@ const setClass = async (interaction, status, className) => {
 	}
 
 	if (status === PLAYER_STATUS.SIGNED_UP) {
-		if (event.faction) {
-			await finalizeSignUp({ interaction, event, data, className, faction: event.faction, mode: "update" });
+		const resolved = resolveFaction(event, className);
+
+		if (resolved.conflict) {
+			await interaction.update({
+				content: factionConflictMessage(event, className),
+				components: [],
+			});
+
+			return;
+		}
+
+		if (resolved.faction) {
+			await finalizeSignUp({ interaction, event, data, className, faction: resolved.faction, mode: "update" });
 			return;
 		}
 
@@ -217,6 +251,17 @@ const setFaction = async (interaction, status, className, faction) => {
 	if (!playerClasses.includes(className)) {
 		await interaction.update({
 			content: "You don't have that class role.",
+			components: [],
+		});
+
+		return;
+	}
+
+	const lockedFaction = getLockedFaction(className);
+
+	if (lockedFaction && lockedFaction !== faction) {
+		await interaction.update({
+			content: `${className} is ${FACTION_LABELS[lockedFaction]}-only.`,
 			components: [],
 		});
 

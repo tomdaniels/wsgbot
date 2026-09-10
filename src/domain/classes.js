@@ -1,3 +1,5 @@
+import { FACTIONS } from "./factions.js";
+
 export const CLASS_ROLES = [
 	{ name: "Druid", color: 0xff7d0a },
 	{ name: "Hunter", color: 0xabd473 },
@@ -25,6 +27,13 @@ const CLASS_INDICATORS = {
 	Warlock: "🟣",
 	Warrior: "🟤",
 };
+
+const CLASS_FACTION_LOCKS = {
+	Paladin: FACTIONS.ALLIANCE,
+	Shaman: FACTIONS.HORDE,
+};
+
+export const getLockedFaction = (className) => CLASS_FACTION_LOCKS[className] ?? null;
 
 export const getClassIndicator = (className) =>
 	CLASS_INDICATORS[className] ?? "⚪";
