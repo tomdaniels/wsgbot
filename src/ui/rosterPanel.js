@@ -33,7 +33,7 @@ const formatPlayerLines = async (guild, players) => {
 export const buildRosterDraftView = async (event, guild, faction) => {
 	const pool = getEligiblePool(event, faction);
 	const rosterIds = new Set(getRosterIds(event, faction));
-	const { roster, bench } = getRosterSplit(event, faction);
+	const { roster } = getRosterSplit(event, faction);
 	const factionLabel = FACTION_LABELS[faction];
 	const factionIndicator = FACTION_INDICATORS[faction];
 
@@ -45,7 +45,6 @@ export const buildRosterDraftView = async (event, guild, faction) => {
 	}
 
 	const rosterLines = await formatPlayerLines(guild, roster);
-	const benchLines = await formatPlayerLines(guild, bench);
 
 	const options = await Promise.all(
 		pool.slice(0, MAX_SELECT_OPTIONS).map(async (player) => {
@@ -68,7 +67,6 @@ export const buildRosterDraftView = async (event, guild, faction) => {
 			rosterLines,
 			"",
 			"Select the roster from the bench below.",
-			benchLines,
 		].join("\n"),
 		components: [
 			new ActionRowBuilder().addComponents(
@@ -104,11 +102,9 @@ export const buildRosterAnnouncement = async (event, guild, faction) => {
 	const lines = [`## ${factionIndicator} ${factionLabel.toUpperCase()} ROSTER`, "", rosterLines];
 
 	if (bench.length > 0) {
-		const benchLines = await Promise.all(
-			bench.map(async (player) => `${getClassIndicator(player.class)} ${await getMemberName(guild, player.userId)}`),
-		);
+		const benchLines = await formatPlayerLines(guild, bench);
 
-		lines.push("", "-# BENCH", ...benchLines.map((line) => `-# ${line}`));
+		lines.push("", "-# BENCH", ...benchLines.split("\n").map((line) => `-# ${line}`));
 	}
 
 	return lines.join("\n");
